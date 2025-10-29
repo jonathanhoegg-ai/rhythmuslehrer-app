@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rhythmuslehrer - Lehrer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .btn {
+            padding: 15px 40px;
+            font-size: 1.3em;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .settings {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+        
+        .settings label {
+            display: block;
+            margin: 15px 0;
+            font-size: 1.2em;
+            color: #333;
+        }
+        
+        select {
+            padding: 10px;
+            font-size: 1.1em;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            margin-left: 10px;
+        }
+        
+        .qr-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 20px auto;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 3px solid #667eea;
+        }
+        
+        .qr-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+        }
+        
+        #qrcode {
+            margin: 20px auto;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .game-code-display {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .game-code {
+            font-size: 4em;
+            font-weight: bold;
+            color: #333;
+            letter-spacing: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .notation {
+            background: white;
+            padding: 60px 20px;
+            margin: 30px 0;
+            border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            text-align: center;
+            font-size: 6em;
+            font-family: 'Segoe UI Symbol', 'Apple Color Emoji', 'Noto Music', serif;
+            line-height: 1.2;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        
+        .answer-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .answer-card {
+            padding: 40px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            min-height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: white;
+            border: none;
+        }
+        
+        .answer-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .answer-red { background: #E53935; }
+        .answer-blue { background: #1E88E5; }
+        .answer-orange { background: #FB8C00; }
+        .answer-green { background: #43A047; }
+        
+        .play-btn {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 15px;
+            border-radius: 50%;
+            font-size: 1.5em;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px auto;
+        }
+        
+        .play-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+        }
+        
+        .players-list {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+        
+        .player-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .score {
+            font-weight: bold;
+            font-size: 1.3em;
+            color: #667eea;
+        }
+        
+        .ranking-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .ranking-content {
+            background: white;
+            padding: 40px;
+            border-radius: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .ranking-content h2 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        .ranking-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.3em;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .ranking-item.first {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #333;
+            font-size: 1.6em;
+        }
+        
+        .ranking-item.second {
+            background: linear-gradient(135deg, #C0C0C0 0%, #808080 100%);
+            font-size: 1.5em;
+        }
+        
+        .ranking-item.third {
+            background: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%);
+            font-size: 1.4em;
+        }
+        
+        .rhythm-editor {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+        
+        .rhythm-list {
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+        
+        .rhythm-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .rhythm-item .notation {
+            font-size: 2em;
+            padding: 20px;
+            min-height: 80px;
+        }
+        
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            font-size: 1.1em;
+        }
+        
+        .live-controls {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .live-controls h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .result-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .result-card h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        
+        .result-table {
+            width: 100%;
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        .result-table th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+        
+        .result-table td {
+            padding: 15px;
+            color: #333;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .result-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .tab-btn {
+            padding: 10px 20px;
+            background: #e0e0e0;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            .notation {
+                font-size: 3em;
+                padding: 40px 10px;
+            }
+            
+            .game-code {
+                font-size: 2.5em;
+                letter-spacing: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Rhythmuslehrer - Lehreransicht 👨‍🏫</h1>
+        
+        <div class="tab-buttons">
+            <button class="tab-btn active" onclick="switchTab('game')">🎮 Spiel</button>
+            <button class="tab-btn" onclick="switchTab('rhythms')">🎵 Rhythmen verwalten</button>
+        </div>
+        
+        <!-- Game Tab -->
+        <div class="tab-content active" id="gameTab">
+            <div class="settings">
+                <h2>⚙️ Spieleinstellungen</h2>
+                <label>
+                    Taktart:
+                    <select id="timeSignature">
+                        <option value="4/4">4/4 Takt</option>
+                        <option value="3/4">3/4 Takt</option>
+                        <option value="6/8">6/8 Takt</option>
+                    </select>
+                </label>
+                <label>
+                    Schwierigkeit:
+                    <select id="difficulty">
+                        <option value="beginner">Anfänger</option>
+                        <option value="intermediate">Fortgeschritten</option>
+                        <option value="advanced">Profi</option>
+                    </select>
+                </label>
+                <label>
+                    <input type="checkbox" id="includePauses"> Pausen einbeziehen
+                </label>
+                <label>
+                    Instrument:
+                    <select id="instrument">
+                        <option value="sine">Klavier</option>
+                        <option value="square">Synthesizer</option>
+                        <option value="drum">Schlagzeug</option>
+                        <option value="bass">Bass</option>
+                        <option value="clap">Clap</option>
+                        <option value="hihat">HiHat</option>
+                    </select>
+                </label>
+            </div>
+            
+            <div class="qr-section" style="display: none;" id="qrSection">
+                <h3>📱 Bitte scannen</h3>
+                <div id="qrcode"></div>
+                <p style="font-size: 1.2em; color: #666; margin-top: 15px;">Zum Spiel beitreten</p>
+            </div>
+            
+            <div class="game-code-display" id="gameCodeDisplay" style="display: none;">
+                <h2>Spielcode:</h2>
+                <div class="game-code" id="gameCodeText"></div>
+                <p style="font-size: 1.2em; margin-top: 15px;">Schüler geben diesen Code ein!</p>
+            </div>
+            
+            <div style="text-align: center;">
+                <button class="btn btn-primary" id="createGameBtn" onclick="createGame()">
+                    🎮 Neues Spiel erstellen
+                </button>
+                <button class="btn btn-success" id="startGameBtn" onclick="startGame()" style="display: none;">
+                    ▶️ Spiel starten
+                </button>
+                <button class="btn btn-danger" id="endGameBtn" onclick="endGame()" style="display: none;">
+                    ⏹️ Spiel beenden
+                </button>
+            </div>
+            
+            <div class="players-list" id="playersList" style="display: none;">
+                <h2>👥 Teilnehmer (<span id="playerCount">0</span>)</h2>
+                <div id="playersContainer"></div>
+            </div>
+            
+            <div id="questionDisplay" style="display: none;">
+                <div class="live-controls">
+                    <h3>🎛️ Live-Steuerung</h3>
+                    <label>
+                        Instrument wechseln:
+                        <select id="liveInstrument" onchange="updateLiveInstrument()">
+                            <option value="sine">Klavier</option>
+                            <option value="square">Synthesizer</option>
+                            <option value="drum">Schlagzeug</option>
+                            <option value="bass">Bass</option>
+                            <option value="clap">Clap</option>
+                            <option value="hihat">HiHat</option>
+                        </select>
+                    </label>
+                </div>
+                
+                <h2 style="text-align: center; color: #667eea; margin: 30px 0;">
+                    Frage <span id="questionNumber">1</span> von <span id="totalQuestions">10</span>
+                </h2>
+                
+                <div class="notation" id="mainNotation"></div>
+                
+                <div class="answer-grid">
+                    <div class="answer-card answer-red" id="teacherOption0">
+                        <button class="play-btn" onclick="playTeacherSound(0)">▶️</button>
+                    </div>
+                    <div class="answer-card answer-blue" id="teacherOption1">
+                        <button class="play-btn" onclick="playTeacherSound(1)">▶️</button>
+                    </div>
+                    <div class="answer-card answer-orange" id="teacherOption2">
+                        <button class="play-btn" onclick="playTeacherSound(2)">▶️</button>
+                    </div>
+                    <div class="answer-card answer-green" id="teacherOption3">
+                        <button class="play-btn" onclick="playTeacherSound(3)">▶️</button>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <button class="btn btn-primary" onclick="nextQuestion()">
+                        ➡️ Nächste Frage
+                    </button>
+                </div>
+            </div>
+            
+            <div id="resultsView" style="display: none;">
+                <div class="result-card">
+                    <h2>🏆 Spielergebnisse 🏆</h2>
+                    <table class="result-table">
+                        <thead>
+                            <tr>
+                                <th>Platz</th>
+                                <th>Name</th>
+                                <th>Punkte</th>
+                                <th>Richtig</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsTableBody"></tbody>
+                    </table>
+                    <button class="btn btn-primary" onclick="location.reload()">
+                        🔄 Neues Spiel
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Rhythms Tab -->
+        <div class="tab-content" id="rhythmsTab">
+            <div class="rhythm-editor">
+                <h2>🎵 Rhythmen verwalten</h2>
+                
+                <h3 style="margin-top: 30px;">Alle Rhythmen anzeigen:</h3>
+                <label>
+                    Taktart:
+                    <select id="viewTimeSignature" onchange="displayAllRhythms()">
+                        <option value="4/4">4/4 Takt</option>
+                        <option value="3/4">3/4 Takt</option>
+                        <option value="6/8">6/8 Takt</option>
+                    </select>
+                </label>
+                <label>
+                    Schwierigkeit:
+                    <select id="viewDifficulty" onchange="displayAllRhythms()">
+                        <option value="beginner">Anfänger</option>
+                        <option value="intermediate">Fortgeschritten</option>
+                        <option value="advanced">Profi</option>
+                    </select>
+                </label>
+                <label>
+                    <input type="checkbox" id="viewPauses" onchange="displayAllRhythms()"> Mit Pausen
+                </label>
+                
+                <div class="rhythm-list" id="rhythmList"></div>
+                
+                <h3 style="margin-top: 40px;">Neuen Rhythmus erstellen:</h3>
+                <label>Taktart:</label>
+                <select id="newTimeSignature">
+                    <option value="4/4">4/4 Takt</option>
+                    <option value="3/4">3/4 Takt</option>
+                    <option value="6/8">6/8 Takt</option>
+                </select>
+                
+                <label>Schwierigkeit:</label>
+                <select id="newDifficulty">
+                    <option value="beginner">Anfänger</option>
+                    <option value="intermediate">Fortgeschritten</option>
+                    <option value="advanced">Profi</option>
+                </select>
+                
+                <label>Notation (z.B. | 4/4 ♩ ♩ ♩ ♩ |):</label>
+                <input type="text" id="newNotation" placeholder="| 4/4  ♩ ♩ ♩ ♩ |">
+                
+                <label>Pattern (z.B. 1,1,1,1 für 4 Viertelnoten):</label>
+                <input type="text" id="newPattern" placeholder="1,1,1,1">
+                
+                <label>Beschreibung:</label>
+                <input type="text" id="newDescription" placeholder="Vier Viertelnoten">
+                
+                <label><input type="checkbox" id="newHasPauses"> Mit Pausen</label>
+                
+                <button class="btn btn-primary" onclick="addCustomRhythm()">
+                    ➕ Rhythmus hinzufügen
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Ranking Overlay -->
+    <div class="ranking-overlay" id="rankingOverlay">
+        <div class="ranking-content">
+            <h2>📊 Aktuelles Ranking</h2>
+            <div id="rankingList"></div>
+        </div>
+    </div>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    
+    <!-- QR Code Generator -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    
+    <script src="teacher.js"></script>
+</body>
+</html>
