@@ -66,7 +66,6 @@ const MOTIVATIONAL_PHRASES = [
 
 document.addEventListener('DOMContentLoaded', () => {
     // Check for game code in URL
-    const response = await fetch('https://jonathanhoegg-ai.github.io/rhythmuslehrer-app/student.html');
     const urlParams = new URLSearchParams(window.location.search);
     const urlGameCode = urlParams.get('game');
     
@@ -94,7 +93,7 @@ function initAudioContext() {
 
 async function loadRhythmsDatabase() {
     try {
-        const response = await fetch('https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/rhythms-database.json');
+        const response = await fetch('https://raw.githubusercontent.com/jonathanhoegg-ai.github.io/rhythmuslehrer-app/main/rhythms-database.json');
         if (!response.ok) throw new Error('Failed to load rhythms database');
         rhythmsDatabase = await response.json();
         console.log('Rhythms database loaded:', rhythmsDatabase);
