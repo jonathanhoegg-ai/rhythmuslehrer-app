@@ -134,7 +134,7 @@ async function createGame() {
     document.getElementById('playersList').style.display = 'block';
     
     // WICHTIG: QR-Code JETZT generieren
-    const qrUrl = 'https://jonathanhoegg-ai/rhythmuslehrer-app/student.html?game=' + currentGameCode;
+    const qrUrl = 'https://jonathanhoegg-ai.github.io/rhythmuslehrer-app/student.html?game=' + currentGameCode;
     const qrContainer = document.getElementById('qrcode');
     qrContainer.innerHTML = ''; // Leeren
     
