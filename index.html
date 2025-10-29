@@ -103,10 +103,32 @@
             text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
         }
         
-        #qrcode {
+        .qr-section {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
             margin: 20px auto;
+            max-width: 300px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .qr-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        
+        #qrcode {
+            margin: 15px auto;
             display: flex;
             justify-content: center;
+        }
+        
+        .qr-section p {
+            color: #666;
+            font-size: 1.1em;
+            margin-top: 10px;
         }
         
         .student-join {
@@ -192,6 +214,19 @@
             margin-left: 10px;
         }
         
+        .live-controls {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .live-controls h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
         .notation {
             background: white;
             padding: 40px;
@@ -215,17 +250,47 @@
             margin: 30px 0;
         }
         
+        /* Responsive für Schüler-Ansicht */
+        @media (max-width: 768px) {
+            .answer-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+        }
+        
+        @media (orientation: landscape) and (max-height: 600px) {
+            .answer-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            
+            .answer-card {
+                min-height: 80px !important;
+                padding: 15px !important;
+            }
+            
+            .notation {
+                font-size: 2em !important;
+                min-height: 100px !important;
+                padding: 20px !important;
+                margin: 15px 0 !important;
+            }
+        }
+        
         .answer-card {
             padding: 30px;
             border-radius: 20px;
             cursor: pointer;
             transition: all 0.3s;
             position: relative;
-            min-height: 100px;
+            min-height: 120px;
             display: flex;
             align-items: center;
             justify-content: center;
             border: 4px solid transparent;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: white;
         }
         
         .answer-card:hover {
@@ -288,6 +353,62 @@
             font-weight: bold;
             font-size: 1.3em;
             color: #667eea;
+        }
+        
+        .ranking-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .ranking-content {
+            background: white;
+            padding: 40px;
+            border-radius: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .ranking-content h2 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        .ranking-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.3em;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .ranking-item.first {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            font-size: 1.5em;
+        }
+        
+        .ranking-item.second {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .ranking-item.third {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
         }
         
         .results-view {
@@ -392,12 +513,13 @@
                 letter-spacing: 5px;
             }
             
-            .answer-grid {
-                grid-template-columns: 1fr;
-            }
-            
             .notation {
                 font-size: 2em;
+            }
+            
+            .role-btn {
+                padding: 15px 30px;
+                font-size: 1.2em;
             }
         }
     </style>
@@ -444,11 +566,16 @@
                 </label>
             </div>
             
+            <div class="qr-section" style="display: none;" id="qrSection">
+                <h3>📱 Bitte scannen</h3>
+                <div id="qrcode"></div>
+                <p>Zum Spiel beitreten</p>
+            </div>
+            
             <div class="game-code-display" id="gameCodeDisplay" style="display: none;">
                 <h2>Spielcode:</h2>
                 <div class="game-code" id="gameCodeText"></div>
-                <div id="qrcode"></div>
-                <p>Schüler können per QR-Code oder Code beitreten!</p>
+                <p>Schüler können den Code eingeben!</p>
             </div>
             
             <div style="text-align: center;">
@@ -469,6 +596,21 @@
             </div>
             
             <div id="questionDisplay" style="display: none;">
+                <div class="live-controls">
+                    <h3>🎛️ Live-Steuerung</h3>
+                    <label>
+                        Instrument wechseln:
+                        <select id="liveInstrument" onchange="updateLiveInstrument()">
+                            <option value="sine">Klavier</option>
+                            <option value="square">Synthesizer</option>
+                            <option value="drum">Schlagzeug</option>
+                            <option value="bass">Bass</option>
+                            <option value="clap">Clap</option>
+                            <option value="hihat">HiHat</option>
+                        </select>
+                    </label>
+                </div>
+                
                 <h2 style="text-align: center; color: #667eea; margin: 30px 0;">
                     Frage <span id="questionNumber">1</span> von <span id="totalQuestions">10</span>
                 </h2>
@@ -523,16 +665,16 @@
                 
                 <div class="answer-grid">
                     <div class="answer-card answer-red" onclick="selectAnswer(0)">
-                        <button class="play-btn" onclick="event.stopPropagation(); playSound(0)">▶️</button>
+                        ROT
                     </div>
                     <div class="answer-card answer-blue" onclick="selectAnswer(1)">
-                        <button class="play-btn" onclick="event.stopPropagation(); playSound(1)">▶️</button>
+                        BLAU
                     </div>
                     <div class="answer-card answer-orange" onclick="selectAnswer(2)">
-                        <button class="play-btn" onclick="event.stopPropagation(); playSound(2)">▶️</button>
+                        ORANGE
                     </div>
                     <div class="answer-card answer-green" onclick="selectAnswer(3)">
-                        <button class="play-btn" onclick="event.stopPropagation(); playSound(3)">▶️</button>
+                        GRÜN
                     </div>
                 </div>
                 
@@ -559,6 +701,14 @@
                     🔄 Neues Spiel
                 </button>
             </div>
+        </div>
+    </div>
+    
+    <!-- Ranking Overlay -->
+    <div class="ranking-overlay" id="rankingOverlay">
+        <div class="ranking-content">
+            <h2>📊 Aktuelles Ranking</h2>
+            <div id="rankingList"></div>
         </div>
     </div>
     
@@ -594,6 +744,7 @@
         let gameQuestions = [];
         let playerScore = 0;
         let audioContext;
+        let currentInstrument = 'sine';
         
         // Rhythm Database
         const rhythms = {
@@ -685,6 +836,7 @@
             const difficulty = document.getElementById('difficulty').value;
             const includePauses = document.getElementById('includePauses').checked;
             const instrument = document.getElementById('instrument').value;
+            currentInstrument = instrument;
             
             // Generate questions
             gameQuestions = generateQuestions(difficulty, includePauses, 10);
@@ -704,15 +856,16 @@
             // Show game code and QR
             document.getElementById('gameCodeDisplay').style.display = 'block';
             document.getElementById('gameCodeText').textContent = currentGameCode;
+            document.getElementById('qrSection').style.display = 'block';
             document.getElementById('createGameBtn').style.display = 'none';
             document.getElementById('startGameBtn').style.display = 'inline-block';
             document.getElementById('endGameBtn').style.display = 'inline-block';
             document.getElementById('playersList').style.display = 'block';
             
-            // Generate QR Code
-            const joinUrl = window.location.href.split('?')[0] + '?game=' + currentGameCode;
+            // Generate QR Code with your GitHub Pages URL
+            const qrUrl = 'https://jonathanhoegg-ai.github.io/rhythmuslehrer-app';
             document.getElementById('qrcode').innerHTML = '';
-            QRCode.toCanvas(document.createElement('canvas'), joinUrl, {
+            QRCode.toCanvas(document.createElement('canvas'), qrUrl, {
                 width: 200,
                 margin: 2
             }, function(error, canvas) {
@@ -781,6 +934,16 @@
             `).join('');
         }
         
+        // Update live instrument
+        async function updateLiveInstrument() {
+            const newInstrument = document.getElementById('liveInstrument').value;
+            currentInstrument = newInstrument;
+            
+            await database.ref('games/' + currentGameCode).update({
+                instrument: newInstrument
+            });
+        }
+        
         // Teacher: Start Game
         async function startGame() {
             await database.ref('games/' + currentGameCode).update({
@@ -791,6 +954,7 @@
             document.getElementById('startGameBtn').style.display = 'none';
             document.getElementById('questionDisplay').style.display = 'block';
             document.getElementById('gameCodeDisplay').style.display = 'none';
+            document.getElementById('qrSection').style.display = 'none';
             
             displayTeacherQuestion(0);
         }
@@ -809,6 +973,9 @@
             document.getElementById('totalQuestions').textContent = gameQuestions.length;
             document.getElementById('mainNotation').textContent = question.notation;
             
+            // Sync live instrument selector
+            document.getElementById('liveInstrument').value = currentInstrument;
+            
             // Display options
             for (let i = 0; i < 4; i++) {
                 const card = document.getElementById('teacherOption' + i);
@@ -825,8 +992,51 @@
             playRhythm(rhythm.pattern);
         }
         
+        // Show ranking overlay
+        async function showRanking() {
+            const snapshot = await database.ref('games/' + currentGameCode + '/players').once('value');
+            const players = snapshot.val();
+            
+            if (!players) return;
+            
+            const playerArray = Object.entries(players).map(([id, data]) => ({
+                id,
+                name: data.name,
+                score: data.score || 0,
+                correct: data.correctAnswers || 0
+            }));
+            
+            playerArray.sort((a, b) => b.score - a.score);
+            
+            const rankingList = document.getElementById('rankingList');
+            rankingList.innerHTML = playerArray.map((player, index) => {
+                let className = 'ranking-item';
+                if (index === 0) className += ' first';
+                else if (index === 1) className += ' second';
+                else if (index === 2) className += ' third';
+                
+                return `
+                    <div class="${className}">
+                        <span>${index + 1}. ${player.name}</span>
+                        <span>${player.score} Punkte</span>
+                    </div>
+                `;
+            }).join('');
+            
+            const overlay = document.getElementById('rankingOverlay');
+            overlay.style.display = 'flex';
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 5000);
+        }
+        
         // Next question
         async function nextQuestion() {
+            // Show ranking before moving to next question
+            await showRanking();
+            
             const nextIndex = currentQuestionIndex + 1;
             
             await database.ref('games/' + currentGameCode).update({
@@ -915,6 +1125,7 @@
             database.ref('games/' + code).on('value', (snapshot) => {
                 const game = snapshot.val();
                 if (game.status === 'playing') {
+                    currentInstrument = game.instrument;
                     displayStudentQuestion(game.currentQuestion);
                 } else if (game.status === 'finished') {
                     showStudentResults();
@@ -956,6 +1167,9 @@
             cards.forEach(card => card.classList.remove('selected'));
             cards[optionIndex].classList.add('selected');
             
+            // Play selected rhythm
+            playRhythm(question.options[optionIndex].pattern);
+            
             // Show feedback
             const feedback = document.getElementById('studentFeedback');
             if (isCorrect) {
@@ -983,36 +1197,19 @@
             }, 2000);
         }
         
-        // Play sound
-        function playSound(optionIndex) {
-            const gameRef = database.ref('games/' + currentGameCode);
-            gameRef.once('value').then((snapshot) => {
-                const game = snapshot.val();
-                const question = game.questions[currentQuestionIndex];
-                const rhythm = question.options[optionIndex];
-                playRhythm(rhythm.pattern);
-            });
-        }
-        
         // Play rhythm pattern
         function playRhythm(pattern) {
             if (!audioContext) initAudio();
             
-            const gameRef = database.ref('games/' + currentGameCode);
-            gameRef.once('value').then((snapshot) => {
-                const game = snapshot.val();
-                const instrument = game.instrument || 'sine';
-                
-                const tempo = 120;
-                const beatDuration = 60 / tempo;
-                let currentTime = audioContext.currentTime;
-                
-                pattern.forEach(duration => {
-                    if (duration > 0) {
-                        playNote(currentTime, duration * beatDuration, instrument);
-                    }
-                    currentTime += duration * beatDuration;
-                });
+            const tempo = 120;
+            const beatDuration = 60 / tempo;
+            let currentTime = audioContext.currentTime;
+            
+            pattern.forEach(duration => {
+                if (duration > 0) {
+                    playNote(currentTime, duration * beatDuration, currentInstrument);
+                }
+                currentTime += duration * beatDuration;
             });
         }
         
@@ -1097,7 +1294,7 @@
                             <h2>Dein Ergebnis</h2>
                             <h1 style="font-size: 5em; margin: 30px 0;">${score} Punkte</h1>
                             <p style="font-size: 1.5em;">
-                                ${correct} von ${gameQuestions.length} richtig
+                                ${correct} von ${gameQuestions.length || 10} richtig
                             </p>
                             <button class="btn btn-primary" onclick="location.reload()" style="margin-top: 30px;">
                                 🔄 Nochmal spielen
