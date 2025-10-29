@@ -66,6 +66,7 @@ const MOTIVATIONAL_PHRASES = [
 
 document.addEventListener('DOMContentLoaded', () => {
     // Check for game code in URL
+    const response = await fetch('https://jonathanhoegg-ai.github.io/rhythmuslehrer-app/student.html');
     const urlParams = new URLSearchParams(window.location.search);
     const urlGameCode = urlParams.get('game');
     
