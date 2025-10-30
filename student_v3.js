@@ -3,15 +3,15 @@
 // Rhythm Learning App - Student Side
 // ===========================
 
-// Firebase Configuration
+// Firebase Configuration (MUSS IDENTISCH MIT TEACHER SEIN!)
 const firebaseConfig = {
-    apiKey: "AIzaSyDLAxah2nlomC5yP35h9M-s73xrr9QCr3A",
-    authDomain: "rhythmuslehrer.firebaseapp.com",
-    databaseURL: "https://rhythmuslehrer-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "rhythmuslehrer",
-    storageBucket: "rhythmuslehrer.firebasestorage.app",
-    messagingSenderId: "673658087151",
-    appId: "1:673658087151:web:0d4dfb46bf94e0dd896e1f"
+    apiKey: "AIzaSyAaes6rfnB-MaNnQl94Vy4RZoWQKhQoI-U",
+    authDomain: "rhythmuslehrer-werkstattschule.firebaseapp.com",
+    databaseURL: "https://rhythmuslehrer-werkstattschule-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "rhythmuslehrer-werkstattschule",
+    storageBucket: "rhythmuslehrer-werkstattschule.firebasestorage.app",
+    messagingSenderId: "55494178199",
+    appId: "1:55494178199:web:da34e02ff8a90bbdcdc0d2"
 };
 
 // Initialize Firebase
@@ -94,7 +94,7 @@ function initAudioContext() {
 async function loadRhythmsDatabase() {
     try {
         // ⚠️ WICHTIG: HIER DEINE GITHUB-URL EINTRAGEN! ⚠️
-        // Format: https://raw.githubusercontent.com/jonathanhoegg-ai/rhythmuslehrer-app/main/rhythms-database.json
+        // Format: https://raw.githubusercontent.com/DEIN-USERNAME/DEIN-REPO/main/rhythms-database.json
         const response = await fetch('https://raw.githubusercontent.com/jonathanhoegg-ai/rhythmuslehrer-app/main/rhythms-database.json');
         if (!response.ok) throw new Error('Failed to load rhythms database');
         rhythmsDatabase = await response.json();
