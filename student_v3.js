@@ -93,7 +93,9 @@ function initAudioContext() {
 
 async function loadRhythmsDatabase() {
     try {
-        const response = await fetch('https://raw.githubusercontent.com/jonathanhoegg-ai/rhythmuslehrer-app/main/rhythms-database.json');
+        // ⚠️ WICHTIG: HIER DEINE GITHUB-URL EINTRAGEN! ⚠️
+        // Format: https://raw.githubusercontent.com/DEIN-USERNAME/DEIN-REPO/main/rhythms-database.json
+        const response = await fetch('https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/rhythms-database.json');
         if (!response.ok) throw new Error('Failed to load rhythms database');
         rhythmsDatabase = await response.json();
         console.log('Rhythms database loaded:', rhythmsDatabase);
