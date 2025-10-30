@@ -22,10 +22,10 @@ let rhythms = {};
 
 // Load rhythms database from GitHub
 // ⚠️ WICHTIG: HIER DEINE GITHUB-URL EINTRAGEN! ⚠️
-// Format: https://raw.githubusercontent.com/jonathanhoegg-ai/rhythmuslehrer-app/main/rhythms-database.json
+// Format: https://raw.githubusercontent.com/DEIN-USERNAME/DEIN-REPO/main/rhythms-database.json
 async function loadRhythmsDatabase() {
     try {
-        const response = await fetch('https://raw.githubusercontent.com/jonathanhoegg-ai/rhythmuslehrer-app/main/rhythms-database.json');
+        const response = await fetch('https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/rhythms-database.json');
         rhythms = await response.json();
         console.log('Rhythmus-Datenbank geladen:', Object.keys(rhythms));
     } catch (error) {
@@ -135,23 +135,32 @@ async function createGame() {
     document.getElementById('endGameBtn').style.display = 'inline-block';
     document.getElementById('playersList').style.display = 'block';
     
-    // ⚠️ WICHTIG: HIER DEINE GITHUB PAGES URL EINTRAGEN! ⚠️ 
+    // ⚠️ WICHTIG: HIER DEINE GITHUB PAGES URL EINTRAGEN! ⚠️
     // Format: https://DEIN-USERNAME.github.io/DEIN-REPO/student.html?game=
-    const qrUrl = 'https://jonathanhoegg-ai.github.io/rhythmuslehrer-app/student.html?game=' + currentGameCode;
+    const qrUrl = 'https://YOUR_USERNAME.github.io/YOUR_REPO/student.html?game=' + currentGameCode;
     const qrContainer = document.getElementById('qrcode');
     qrContainer.innerHTML = ''; // Leeren
     
-    // QR-Code Canvas erstellen
-    const canvas = document.createElement('canvas');
-    await QRCode.toCanvas(canvas, qrUrl, {
-        width: 250,
-        margin: 2,
-        color: {
-            dark: '#667eea',
-            light: '#ffffff'
+    // QR-Code Canvas erstellen (mit Fehlerbehandlung)
+    try {
+        if (typeof QRCode === 'undefined') {
+            qrContainer.innerHTML = '<p style="color: red;">QR-Code Library lädt noch... Bitte kurz warten und nochmal versuchen!</p>';
+            return;
         }
-    });
-    qrContainer.appendChild(canvas);
+        const canvas = document.createElement('canvas');
+        await QRCode.toCanvas(canvas, qrUrl, {
+            width: 250,
+            margin: 2,
+            color: {
+                dark: '#667eea',
+                light: '#ffffff'
+            }
+        });
+        qrContainer.appendChild(canvas);
+    } catch (error) {
+        console.error('QR-Code Fehler:', error);
+        qrContainer.innerHTML = `<p style="color: red;">QR-Code konnte nicht erstellt werden. Manueller Code: ${currentGameCode}</p>`;
+    }
     
     // Listen for players
     database.ref('games/' + currentGameCode + '/players').on('value', (snapshot) => {
@@ -382,9 +391,9 @@ function playRhythmWithMetronome(pattern) {
     pattern.forEach(duration => {
         if (duration > 0) {
             playNote(currentTime, duration * beatDuration, currentInstrument);
-        } else {
-            // Leises Rauschen bei Pausen
-            playPauseNoise(currentTime, duration * beatDuration);
+        } else if (duration < 0) {
+            // Leises Rauschen bei Pausen (nur wenn duration negativ)
+            playPauseNoise(currentTime, Math.abs(duration) * beatDuration);
         }
         currentTime += Math.abs(duration) * beatDuration;
     });
@@ -408,7 +417,9 @@ function playMetronomeClick(startTime, isFirst) {
 }
 
 function playPauseNoise(startTime, duration) {
-    const bufferSize = audioContext.sampleRate * Math.abs(duration);
+    const actualDuration = Math.abs(duration);
+    if (actualDuration < 0.01) return; // Skip sehr kurze Pausen
+    const bufferSize = Math.max(1, Math.floor(audioContext.sampleRate * actualDuration));
     const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
     const data = buffer.getChannelData(0);
     

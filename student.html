@@ -29,7 +29,13 @@
             margin-bottom: 20px;
             font-size: 1.8em;
         }
-        .student-join { text-align: center; padding: 20px; }
+        
+        /* Screens */
+        .screen { display: none; }
+        .screen.active { display: block; }
+        
+        /* Join Screen */
+        .join-content { text-align: center; padding: 20px; }
         .name-input, .code-input {
             width: 100%;
             padding: 15px;
@@ -55,63 +61,16 @@
             margin: 10px;
             background: #667eea;
             color: white;
+            width: 100%;
         }
-        .notation {
-            background: white;
-            padding: 30px 10px;
-            margin: 20px 0;
-            border-radius: 20px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            text-align: center;
-            font-size: 4em;
-            font-family: 'Segoe UI Symbol', 'Apple Color Emoji', serif;
-            line-height: 1.3;
-            min-height: 150px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            word-wrap: break-word;
-            overflow: hidden;
-        }
-        .answer-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 15px;
-            margin: 20px 0;
-        }
-        @media (orientation: landscape) and (min-width: 600px) {
-            .answer-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        .answer-card {
-            padding: 30px;
-            border-radius: 15px;
-            cursor: pointer;
-            transition: all 0.3s;
-            min-height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5em;
-            font-weight: bold;
-            color: white;
-            border: none;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-        }
-        .answer-card:active {
-            transform: scale(0.95);
-        }
-        .answer-card.selected {
-            box-shadow: 0 0 0 5px white, 0 0 20px rgba(0,0,0,0.3);
-        }
-        .answer-red { background: #E53935; }
-        .answer-blue { background: #1E88E5; }
-        .answer-orange { background: #FB8C00; }
-        .answer-green { background: #43A047; }
-        .waiting-screen {
+        .btn:active { transform: scale(0.95); }
+        
+        /* Waiting Screen */
+        .waiting-content {
             text-align: center;
             padding: 40px 20px;
         }
-        .waiting-screen h2 {
+        .waiting-content h2 {
             color: #667eea;
             font-size: 1.5em;
             margin: 20px 0;
@@ -129,29 +88,102 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .feedback {
-            font-size: 1.5em;
+        
+        /* Question Screen */
+        .question-content { padding: 20px 10px; }
+        .question-header {
             text-align: center;
-            padding: 20px;
-            margin: 15px 0;
+            color: #667eea;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+        .notation {
+            background: #f8f9fa;
+            padding: 30px 10px;
+            margin: 20px 0;
+            border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            text-align: center;
+            font-size: 3em;
+            font-family: 'Segoe UI Symbol', 'Apple Color Emoji', serif;
+            line-height: 1.2;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            word-wrap: break-word;
+            overflow: hidden;
+        }
+        .answer-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        @media (orientation: landscape) and (min-width: 600px) {
+            .answer-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        .answer-btn {
+            padding: 30px;
             border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: white;
+            border: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .answer-btn:active { transform: scale(0.95); }
+        .answer-btn.selected {
+            box-shadow: 0 0 0 5px white, 0 0 20px rgba(0,0,0,0.3);
+        }
+        .answer-btn:nth-child(1) { background: #E53935; }
+        .answer-btn:nth-child(2) { background: #1E88E5; }
+        .answer-btn:nth-child(3) { background: #FB8C00; }
+        .answer-btn:nth-child(4) { background: #43A047; }
+        
+        /* Intermediate Screen */
+        .intermediate-content {
+            text-align: center;
+            padding: 30px 20px;
+        }
+        .feedback-text {
+            font-size: 2em;
+            margin: 20px 0;
             font-weight: bold;
         }
-        .feedback.correct { background: #43A047; color: white; }
-        .feedback.wrong { background: #E53935; color: white; }
+        .motivational-text {
+            font-size: 1.3em;
+            color: #666;
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+        
+        /* Results Screen */
+        .results-content {
+            text-align: center;
+            padding: 30px 20px;
+        }
         .result-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 30px;
             border-radius: 20px;
             margin: 20px 0;
-            text-align: center;
         }
         .result-card h2 { font-size: 2em; margin-bottom: 20px; }
-        .result-card h1 { font-size: 4em; margin: 30px 0; }
+        .result-card .score { font-size: 4em; margin: 30px 0; font-weight: bold; }
+        .result-card .message { font-size: 1.5em; margin-top: 20px; }
+        
         @media (max-width: 480px) {
             .notation { font-size: 2.5em; padding: 20px 5px; }
             h1 { font-size: 1.5em; }
+            .answer-btn { font-size: 1.2em; padding: 20px; }
         }
     </style>
 </head>
@@ -159,40 +191,71 @@
     <div class="container">
         <h1>🎵 Rhythmus-Trainer 🎵</h1>
         
-        <div class="student-join" id="studentJoin">
-            <h2>Tritt einem Spiel bei!</h2>
-            <input type="text" class="name-input" id="studentName" placeholder="Dein Name" maxlength="20">
-            <input type="text" class="code-input" id="joinCode" placeholder="SPIELCODE" maxlength="6">
-            <button class="btn" onclick="joinGame()">Beitreten</button>
-        </div>
-        
-        <div class="waiting-screen" id="waitingScreen" style="display: none;">
-            <div class="spinner"></div>
-            <h2 id="waitingText">Warte auf den Spielstart...</h2>
-            <p>Spielcode: <strong id="currentGameCode"></strong></p>
-            <p>Name: <strong id="currentPlayerName"></strong></p>
-        </div>
-        
-        <div id="studentQuestion" style="display: none;">
-            <h2 style="text-align: center; color: #667eea; margin: 20px 0;">
-                Frage <span id="studentQuestionNumber">1</span>
-            </h2>
-            
-            <div class="notation" id="studentNotation"></div>
-            
-            <div class="answer-grid">
-                <div class="answer-card answer-red" onclick="selectAnswer(0)">🔴 ROT</div>
-                <div class="answer-card answer-blue" onclick="selectAnswer(1)">🔵 BLAU</div>
-                <div class="answer-card answer-orange" onclick="selectAnswer(2)">🟠 ORANGE</div>
-                <div class="answer-card answer-green" onclick="selectAnswer(3)">🟢 GRÜN</div>
+        <!-- Join Screen -->
+        <div id="join-screen" class="screen active">
+            <div class="join-content">
+                <h2>Tritt einem Spiel bei!</h2>
+                <input type="text" class="name-input" id="player-name" placeholder="Dein Name" maxlength="20">
+                <input type="text" class="code-input" id="game-code" placeholder="SPIELCODE" maxlength="6">
+                <button class="btn" id="join-btn">Beitreten</button>
             </div>
-            
-            <div id="studentFeedback"></div>
+        </div>
+        
+        <!-- Waiting Screen -->
+        <div id="waiting-screen" class="screen">
+            <div class="waiting-content">
+                <div class="spinner"></div>
+                <h2>Warte auf den Spielstart...</h2>
+                <p>Spielcode: <strong id="waiting-game-code"></strong></p>
+                <p>Name: <strong id="waiting-player-name"></strong></p>
+            </div>
+        </div>
+        
+        <!-- Question Screen -->
+        <div id="question-screen" class="screen">
+            <div class="question-content">
+                <div class="question-header">
+                    <span id="question-number">Frage 1</span>
+                </div>
+                
+                <div class="notation" id="rhythm-notation">♩ ♩ ♩ ♩</div>
+                
+                <div class="answer-grid">
+                    <button class="answer-btn" data-answer="0">🔴 ROT</button>
+                    <button class="answer-btn" data-answer="1">🔵 BLAU</button>
+                    <button class="answer-btn" data-answer="2">🟠 ORANGE</button>
+                    <button class="answer-btn" data-answer="3">🟢 GRÜN</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Intermediate Screen -->
+        <div id="intermediate-screen" class="screen">
+            <div class="intermediate-content">
+                <div id="answer-feedback" class="feedback-text"></div>
+                <div id="motivational-text" class="motivational-text"></div>
+                <button class="btn" id="continue-btn">Weiter</button>
+            </div>
+        </div>
+        
+        <!-- Results Screen -->
+        <div id="results-screen" class="screen">
+            <div class="results-content">
+                <div class="result-card">
+                    <h2>🎉 Spiel beendet! 🎉</h2>
+                    <div class="score" id="final-score">0 / 10</div>
+                    <div class="message" id="final-message"></div>
+                </div>
+                <button class="btn" id="back-menu-btn">Zurück zum Menü</button>
+            </div>
         </div>
     </div>
     
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-    <script src="student.js"></script>
+    
+    <!-- Student JavaScript -->
+    <script src="student_v3.js"></script>
 </body>
 </html>
