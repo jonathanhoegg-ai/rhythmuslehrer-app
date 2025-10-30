@@ -22,7 +22,7 @@ let rhythms = {};
 
 // Load rhythms database from GitHub
 // ⚠️ WICHTIG: HIER DEINE GITHUB-URL EINTRAGEN! ⚠️
-// Format: https://raw.githubusercontent.com/DEIN-USERNAME/DEIN-REPO/main/rhythms-database.json
+// Format: https://raw.githubusercontent.com/jonathanhoegg-ai/rhythmuslehrer-app/main/rhythms-database.json
 async function loadRhythmsDatabase() {
     try {
         const response = await fetch('https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/rhythms-database.json');
@@ -137,7 +137,7 @@ async function createGame() {
     
     // ⚠️ WICHTIG: HIER DEINE GITHUB PAGES URL EINTRAGEN! ⚠️
     // Format: https://DEIN-USERNAME.github.io/DEIN-REPO/student.html?game=
-    const qrUrl = 'https://YOUR_USERNAME.github.io/YOUR_REPO/student.html?game=' + currentGameCode;
+    const qrUrl = 'https://jonathanhoegg-ai.github.io/rhythmuslehrer-app/student.html?game=' + currentGameCode;
     const qrContainer = document.getElementById('qrcode');
     qrContainer.innerHTML = ''; // Leeren
     
