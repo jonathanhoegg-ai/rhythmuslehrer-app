@@ -25,7 +25,7 @@ let rhythms = {};
 // Format: https://raw.githubusercontent.com/jonathanhoegg-ai/rhythmuslehrer-app/main/rhythms-database.json
 async function loadRhythmsDatabase() {
     try {
-        const response = await fetch('https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/rhythms-database.json');
+        const response = await fetch('https://raw.githubusercontent.com/jonathanhoegg-ai/rhythmuslehrer-app/main/rhythms-database.json');
         rhythms = await response.json();
         console.log('Rhythmus-Datenbank geladen:', Object.keys(rhythms));
     } catch (error) {
