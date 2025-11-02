@@ -243,6 +243,11 @@ function generateQuestions(timeSignature, difficulty, includePauses, count) {
         
         questions.push({
             notation: correct.notation,
+            pattern: correct.pattern,
+            description: correct.description,
+            timeSignature: timeSignature,
+            tempo: 120,
+            instrument: currentInstrument || 'Holzblock',
             options: options,
             correctAnswer: correctIndex
         });
@@ -574,9 +579,9 @@ function playPauseNoise(startTime, duration) {
     const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
     const data = buffer.getChannelData(0);
     
-    // Weißes Rauschen generieren - WICHTIG: Gut hörbar aber nicht zu laut
+    // Weißes Rauschen generieren - WICHTIG: DEUTLICH HÖRBAR
     for (let i = 0; i < bufferSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * 0.08; // Erhöht von 0.02 auf 0.08
+        data[i] = (Math.random() * 2 - 1) * 0.15; // Erhöht auf 0.15 für bessere Hörbarkeit
     }
     
     const source = audioContext.createBufferSource();
@@ -586,11 +591,11 @@ function playPauseNoise(startTime, duration) {
     source.connect(gainNode);
     gainNode.connect(audioContext.destination);
     
-    // Lautstärke erhöht von 0.05 auf 0.15 für bessere Hörbarkeit
-    gainNode.gain.value = 0.15;
+    // Lautstärke auf 0.25 für DEUTLICH hörbares Rauschen
+    gainNode.gain.value = 0.25;
     
     source.start(startTime);
-    console.log(`✓ Pause noise played: ${actualDuration.toFixed(2)}s at gain 0.15`);
+    console.log(`✓ Pause noise played: ${actualDuration.toFixed(2)}s at gain 0.25`);
 }
 
 function playNote(startTime, duration, instrument) {

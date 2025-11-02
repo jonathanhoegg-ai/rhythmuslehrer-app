@@ -31,9 +31,15 @@ let rhythmsDatabase = null;
 let statusListener = null;
 let currentQuestionListener = null;
 
+// Timer for speed bonus
+let questionStartTime = null;
+const MAX_TIME_FOR_BONUS = 10000; // 10 seconds for full bonus
+const BASE_POINTS = 100;
+const SPEED_BONUS_MAX = 50;
+
 // Audio Configuration
 const METRONOME_FREQUENCY = 1000; // Hz for metronome click
-const NOISE_DURATION = 0.3; // seconds for pause noise
+const NOISE_DURATION = 0.5; // seconds for pause noise (default)
 const INSTRUMENTS = {
     'Holzblock': { frequency: 800, duration: 0.1 },
     'Kuhglocke': { frequency: 600, duration: 0.15 },
@@ -312,6 +318,9 @@ async function showCurrentQuestion() {
 
         showScreen(questionScreen);
         
+        // Start timer for speed bonus
+        questionStartTime = Date.now();
+        
         // Display question number and notation
         document.getElementById('question-number').textContent = `Frage ${currentQuestionIndex + 1}`;
         document.getElementById('rhythm-notation').textContent = question.notation;
@@ -320,6 +329,12 @@ async function showCurrentQuestion() {
         document.querySelectorAll('.answer-btn').forEach(btn => {
             btn.classList.remove('selected');
             btn.disabled = false;
+            // Reset styling
+            btn.style.border = '';
+            btn.style.boxShadow = '';
+            // Remove checkmarks
+            const text = btn.innerHTML;
+            btn.innerHTML = text.replace(' ✅', '').replace(' ❌', '');
         });
 
         // Play rhythm with metronome
@@ -365,10 +380,10 @@ async function selectAnswer(answerIndex) {
         selectedBtn.innerHTML += ' ❌';
     }
 
-    // Wait for teacher to proceed or auto-advance after delay
-    setTimeout(() => {
-        checkForNextQuestion();
-    }, 2000);
+    // Show intermediate screen with feedback after short delay
+    setTimeout(async () => {
+        await showIntermediateScreen();
+    }, 1500);
 }
 
 async function submitAnswer(answerIndex) {
@@ -400,10 +415,22 @@ async function submitAnswer(answerIndex) {
         }
         
         if (playerKey && isCorrect) {
+            // Calculate speed bonus
+            const timeElapsed = Date.now() - questionStartTime;
+            let points = BASE_POINTS;
+            
+            if (timeElapsed < MAX_TIME_FOR_BONUS) {
+                // Speed bonus: 50 points max for instant answer, decreases linearly
+                const speedBonus = Math.round(SPEED_BONUS_MAX * (1 - timeElapsed / MAX_TIME_FOR_BONUS));
+                points += speedBonus;
+                console.log(`⚡ Speed bonus: +${speedBonus} points (answered in ${(timeElapsed/1000).toFixed(1)}s)`);
+            }
+            
             const currentScore = players[playerKey].score || 0;
             await gameRef.child('players/' + playerKey).update({
-                score: currentScore + 100,
-                correctAnswers: (players[playerKey].correctAnswers || 0) + 1
+                score: currentScore + points,
+                correctAnswers: (players[playerKey].correctAnswers || 0) + 1,
+                lastAnswerPoints: points
             });
         }
         
@@ -617,17 +644,21 @@ async function playRhythmWithMetronome(question) {
     // Add small pause after metronome
     currentTime += beatDuration * 0.5;
 
-    // Play the actual rhythm
-    if (question.beats) {
-        question.beats.forEach((beat, index) => {
-            if (beat === 'rest' || beat === 'pause' || beat === 0 || beat < 0) {
-                // WICHTIG: Für ALLE Pausen weißes Rauschen spielen
-                console.log(`Playing pause noise at beat ${index}`);
-                playPauseNoise(currentTime, beatDuration);
-            } else {
-                playBeat(beat, currentTime, question.instrument || 'Holzblock');
+    // Play the actual rhythm using pattern data
+    const pattern = question.pattern || question.beats || [];
+    if (pattern.length > 0) {
+        pattern.forEach((duration, index) => {
+            const absDuration = Math.abs(duration);
+            if (duration < 0) {
+                // PAUSEN: Weißes Rauschen spielen
+                console.log(`🔇 Pause at beat ${index}, duration: ${absDuration} beats`);
+                playPauseNoise(currentTime, absDuration * beatDuration);
+            } else if (duration > 0) {
+                // NOTEN: Instrument spielen
+                console.log(`🎵 Note at beat ${index}, duration: ${duration} beats`);
+                playBeat(duration, currentTime, question.instrument || 'Holzblock');
             }
-            currentTime += beatDuration;
+            currentTime += absDuration * beatDuration;
         });
     }
 }
@@ -660,9 +691,9 @@ function playPauseNoise(time, duration) {
     const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
     const data = buffer.getChannelData(0);
 
-    // Weißes Rauschen generieren - WICHTIG: Gut hörbar aber nicht zu laut
+    // Weißes Rauschen generieren - WICHTIG: DEUTLICH HÖRBAR
     for (let i = 0; i < bufferSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * 0.08; // Erhöht von 0.05 auf 0.08
+        data[i] = (Math.random() * 2 - 1) * 0.15; // Erhöht auf 0.15 für bessere Hörbarkeit
     }
 
     const noise = audioContext.createBufferSource();
@@ -672,14 +703,14 @@ function playPauseNoise(time, duration) {
     noise.connect(gainNode);
     gainNode.connect(audioContext.destination);
 
-    // Lautstärke erhöht von 0.1 auf 0.15 für bessere Hörbarkeit
-    gainNode.gain.value = 0.15;
+    // Lautstärke auf 0.25 für DEUTLICH hörbares Rauschen
+    gainNode.gain.value = 0.25;
 
     noise.start(time);
-    console.log(`✓ Pause noise played: ${actualDuration.toFixed(2)}s at gain 0.15`);
+    console.log(`✓ Pause noise played: ${actualDuration.toFixed(2)}s at gain 0.25`);
 }
 
-function playBeat(beatType, time, instrumentName) {
+function playBeat(beatDuration, time, instrumentName) {
     const instrument = INSTRUMENTS[instrumentName] || INSTRUMENTS['Holzblock'];
     
     const oscillator = audioContext.createOscillator();
@@ -691,12 +722,13 @@ function playBeat(beatType, time, instrumentName) {
     oscillator.frequency.value = instrument.frequency;
     oscillator.type = instrumentName === 'Becken' ? 'sawtooth' : 'sine';
 
-    const duration = instrument.duration;
-    gainNode.gain.setValueAtTime(0.5, time);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, time + duration);
+    // Use instrument's natural duration, not beat duration
+    const soundDuration = instrument.duration;
+    gainNode.gain.setValueAtTime(0.6, time);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, time + soundDuration);
 
     oscillator.start(time);
-    oscillator.stop(time + duration);
+    oscillator.stop(time + soundDuration);
 }
 
 // ===========================
