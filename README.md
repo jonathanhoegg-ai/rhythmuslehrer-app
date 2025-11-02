@@ -152,15 +152,46 @@ const firebaseConfig = {
 - Erst nach dem ersten Click/Touch wird Audio aktiv
 
 ### Firebase-Fehler
-- **Lösung:** Prüfe Firebase Console → Realtime Database → Rules:
-  ```json
-  {
-    "rules": {
-      ".read": true,
-      ".write": true
+- **Lösung:** Prüfe Firebase Console → Realtime Database → Rules
+
+**⚠️ WICHTIG: Sichere Rules verwenden!**
+
+**Für Tests (unsicher, nur für kurze Zeit!):**
+```json
+{
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}
+```
+
+**Für Produktion (EMPFOHLEN - sicher!):**
+```json
+{
+  "rules": {
+    "games": {
+      "$gameCode": {
+        ".read": true,
+        ".write": "!data.exists() || data.child('status').val() !== 'finished'",
+        "players": {
+          ".write": "data.parent().child('status').val() === 'waiting'"
+        },
+        "answers": {
+          ".write": "data.parent().child('status').val() === 'playing'"
+        }
+      }
     }
   }
-  ```
+}
+```
+
+**Was macht das?**
+- ✅ Jeder kann Spiele lesen (QR-Code scannen)
+- ✅ Neue Spiele können erstellt werden
+- ✅ Spieler können nur im Status "waiting" beitreten
+- ✅ Antworten können nur im Status "playing" abgegeben werden
+- ✅ Beendete Spiele können nicht mehr geändert werden
 
 ### Schüler können nicht beitreten
 - **Lösung:** Spiel muss im Status "waiting" sein

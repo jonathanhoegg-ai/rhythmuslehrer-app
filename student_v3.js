@@ -27,6 +27,10 @@ let playerAnswers = [];
 let audioContext = null;
 let rhythmsDatabase = null;
 
+// Firebase Listeners (for cleanup)
+let statusListener = null;
+let currentQuestionListener = null;
+
 // Audio Configuration
 const METRONOME_FREQUENCY = 1000; // Hz for metronome click
 const NOISE_DURATION = 0.3; // seconds for pause noise
@@ -86,8 +90,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initAudioContext() {
     if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        console.log('Audio Context initialized');
+        try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            console.log('Audio Context initialized');
+        } catch (error) {
+            console.error('Failed to initialize Audio Context:', error);
+            alert('Audio konnte nicht initialisiert werden. Bitte erlauben Sie Audio-Wiedergabe in Ihren Browser-Einstellungen.');
+        }
     }
 }
 
@@ -135,6 +144,7 @@ function setupEventListeners() {
 
     // Back to Menu Button on Results Screen
     document.getElementById('back-menu-btn').addEventListener('click', () => {
+        cleanupListeners();
         location.reload();
     });
 
@@ -180,6 +190,15 @@ async function joinGame() {
             return;
         }
 
+        // Check for duplicate names
+        if (game.players) {
+            const existingNames = Object.values(game.players).map(p => p.name.toLowerCase());
+            if (existingNames.includes(playerName.toLowerCase())) {
+                alert('Dieser Name ist bereits vergeben! Bitte wähle einen anderen Namen. 🙋');
+                return;
+            }
+        }
+
         // Add player to game
         const playersRef = gameRef.child('players');
         await playersRef.push({
@@ -202,24 +221,42 @@ async function joinGame() {
 }
 
 function listenForGameStart() {
-    gameRef.child('status').on('value', (snapshot) => {
+    // Clean up old listeners first
+    cleanupListeners();
+    
+    // Listen for status changes
+    statusListener = gameRef.child('status').on('value', (snapshot) => {
         const status = snapshot.val();
         
         if (status === 'playing') {
             loadGameQuestions();
         } else if (status === 'finished') {
             showResults();
+            cleanupListeners(); // Clean up when game ends
         }
     });
 
     // Listen for current question changes
-    gameRef.child('currentQuestion').on('value', (snapshot) => {
+    currentQuestionListener = gameRef.child('currentQuestion').on('value', (snapshot) => {
         const questionIndex = snapshot.val();
         if (questionIndex !== null && questionIndex !== currentQuestionIndex) {
             currentQuestionIndex = questionIndex;
             showCurrentQuestion();
         }
     });
+}
+
+function cleanupListeners() {
+    if (gameRef) {
+        if (statusListener !== null) {
+            gameRef.child('status').off('value', statusListener);
+            statusListener = null;
+        }
+        if (currentQuestionListener !== null) {
+            gameRef.child('currentQuestion').off('value', currentQuestionListener);
+            currentQuestionListener = null;
+        }
+    }
 }
 
 // ===========================
@@ -337,40 +374,49 @@ async function checkForNextQuestion() {
     }
 }
 
-function showIntermediateScreen() {
+async function showIntermediateScreen() {
     showScreen(intermediateScreen);
 
-    // Calculate current stats
-    const answeredQuestions = playerAnswers.filter(a => a !== null).length;
-    const correctAnswers = playerAnswers.filter((a, i) => {
-        return a !== null && checkAnswerCorrectness(i, a);
-    }).length;
+    try {
+        // Calculate current stats ASYNCHRONOUSLY
+        const answeredQuestions = playerAnswers.filter(a => a !== null).length;
+        let correctAnswers = 0;
+        
+        // Count correct answers asynchronously
+        for (let i = 0; i < playerAnswers.length; i++) {
+            if (playerAnswers[i] !== null) {
+                const isCorrect = await checkAnswerCorrectness(i, playerAnswers[i]);
+                if (isCorrect) correctAnswers++;
+            }
+        }
 
-    const percentCorrect = answeredQuestions > 0 
-        ? Math.round((correctAnswers / answeredQuestions) * 100) 
-        : 0;
+        const percentCorrect = answeredQuestions > 0 
+            ? Math.round((correctAnswers / answeredQuestions) * 100) 
+            : 0;
 
-    // Show if last answer was correct
-    const lastAnswerCorrect = checkAnswerCorrectness(currentQuestionIndex - 1, playerAnswers[currentQuestionIndex - 1]);
-    
-    const feedbackElement = document.getElementById('answer-feedback');
-    if (lastAnswerCorrect) {
-        feedbackElement.innerHTML = '✅ <strong>Richtig!</strong>';
-        feedbackElement.style.color = '#43A047';
-    } else {
-        feedbackElement.innerHTML = '❌ <strong>Falsch!</strong>';
-        feedbackElement.style.color = '#E53935';
-    }
+        // Show if last answer was correct
+        const lastAnswerCorrect = await checkAnswerCorrectness(currentQuestionIndex - 1, playerAnswers[currentQuestionIndex - 1]);
+        
+        const feedbackElement = document.getElementById('answer-feedback');
+        if (lastAnswerCorrect) {
+            feedbackElement.innerHTML = '✅ <strong>Richtig!</strong>';
+            feedbackElement.style.color = '#43A047';
+        } else {
+            feedbackElement.innerHTML = '❌ <strong>Falsch!</strong>';
+            feedbackElement.style.color = '#E53935';
+        }
 
-    // Get total questions
-    gameRef.child('questions').once('value', (snapshot) => {
+        // Get total questions
+        const snapshot = await gameRef.child('questions').once('value');
         const totalQuestions = snapshot.numChildren();
         const remainingQuestions = totalQuestions - answeredQuestions;
 
         // Generate motivational message
         const motivationalText = generateMotivationalText(percentCorrect, remainingQuestions);
         document.getElementById('motivational-text').textContent = motivationalText;
-    });
+    } catch (error) {
+        console.error('Error showing intermediate screen:', error);
+    }
 }
 
 function generateMotivationalText(percentCorrect, remainingQuestions) {
@@ -389,10 +435,16 @@ function generateMotivationalText(percentCorrect, remainingQuestions) {
     return message;
 }
 
-function checkAnswerCorrectness(questionIndex, answerIndex) {
-    // This would need to fetch the correct answer from Firebase
-    // For now, we'll implement a simplified version
-    return Math.random() > 0.5; // Placeholder
+async function checkAnswerCorrectness(questionIndex, answerIndex) {
+    try {
+        const snapshot = await gameRef.child('questions/' + questionIndex).once('value');
+        const question = snapshot.val();
+        if (!question) return false;
+        return answerIndex === question.correctAnswer;
+    } catch (error) {
+        console.error('Error checking answer correctness:', error);
+        return false;
+    }
 }
 
 function showNextQuestion() {
@@ -465,9 +517,20 @@ async function playRhythmWithMetronome(question) {
         initAudioContext();
     }
 
-    // Resume audio context if suspended
-    if (audioContext.state === 'suspended') {
-        await audioContext.resume();
+    if (!audioContext) {
+        console.error('Audio Context not available');
+        return;
+    }
+
+    // Resume audio context if suspended (iOS Safari fix)
+    try {
+        if (audioContext.state === 'suspended') {
+            await audioContext.resume();
+            console.log('Audio Context resumed');
+        }
+    } catch (error) {
+        console.error('Failed to resume Audio Context:', error);
+        return;
     }
 
     const timeSignature = question.timeSignature || '4/4';

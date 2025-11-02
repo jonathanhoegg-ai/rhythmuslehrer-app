@@ -36,7 +36,13 @@ async function loadRhythmsDatabase() {
 
 function initAudio() {
     if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            console.log('Audio Context initialized');
+        } catch (error) {
+            console.error('Failed to initialize Audio Context:', error);
+            alert('Audio konnte nicht initialisiert werden. Bitte erlauben Sie Audio-Wiedergabe in Ihren Browser-Einstellungen.');
+        }
     }
 }
 
@@ -75,9 +81,11 @@ function displayAllRhythms() {
         return;
     }
     
+    // Support both naming conventions: withPauses/withoutPauses AND with_pause/no_pause
+    const difficultyData = rhythms[timeSignature][difficulty];
     const source = withPauses 
-        ? rhythms[timeSignature][difficulty].withPauses 
-        : rhythms[timeSignature][difficulty].withoutPauses;
+        ? (difficultyData.withPauses || difficultyData.with_pause || [])
+        : (difficultyData.withoutPauses || difficultyData.no_pause || []);
     
     if (source.length === 0) {
         rhythmList.innerHTML = '<p>Keine Rhythmen für diese Auswahl vorhanden.</p>';
@@ -141,10 +149,19 @@ async function createGame() {
     const qrContainer = document.getElementById('qrcode');
     qrContainer.innerHTML = ''; // Leeren
     
-    // QR-Code Canvas erstellen (mit Fehlerbehandlung)
+    // QR-Code Canvas erstellen (mit verbesserter Fehlerbehandlung)
     try {
         if (typeof QRCode === 'undefined') {
-            qrContainer.innerHTML = '<p style="color: red;">QR-Code Library lädt noch... Bitte kurz warten und nochmal versuchen!</p>';
+            console.warn('QR-Code Library not loaded yet');
+            qrContainer.innerHTML = '<p style="color: #667eea; font-weight: bold;">QR-Code Library lädt noch... Bitte kurz warten!</p>';
+            // Retry after 1 second
+            setTimeout(() => {
+                if (typeof QRCode !== 'undefined') {
+                    createGame(); // Retry game creation
+                } else {
+                    qrContainer.innerHTML = `<p style="color: #E53935;">QR-Code Library konnte nicht geladen werden.<br>Verwenden Sie den manuellen Code: <strong>${currentGameCode}</strong></p>`;
+                }
+            }, 1000);
             return;
         }
         const canvas = document.createElement('canvas');
@@ -157,9 +174,10 @@ async function createGame() {
             }
         });
         qrContainer.appendChild(canvas);
+        console.log('QR-Code successfully generated');
     } catch (error) {
         console.error('QR-Code Fehler:', error);
-        qrContainer.innerHTML = `<p style="color: red;">QR-Code konnte nicht erstellt werden. Manueller Code: ${currentGameCode}</p>`;
+        qrContainer.innerHTML = `<p style="color: #E53935; font-weight: bold;">QR-Code konnte nicht erstellt werden.</p><p>Verwenden Sie den manuellen Code: <strong style="font-size: 1.5em;">${currentGameCode}</strong></p>`;
     }
     
     // Listen for players
@@ -169,9 +187,14 @@ async function createGame() {
 }
 
 function generateQuestions(timeSignature, difficulty, includePauses, count) {
+    // Support both naming conventions
+    const difficultyData = rhythms[timeSignature][difficulty];
+    const withoutPausesData = difficultyData.withoutPauses || difficultyData.no_pause || [];
+    const withPausesData = difficultyData.withPauses || difficultyData.with_pause || [];
+    
     const pool = includePauses 
-        ? [...rhythms[timeSignature][difficulty].withoutPauses, ...rhythms[timeSignature][difficulty].withPauses]
-        : rhythms[timeSignature][difficulty].withoutPauses;
+        ? [...withoutPausesData, ...withPausesData]
+        : withoutPausesData;
     
     if (pool.length < 4) {
         return [];
@@ -195,7 +218,7 @@ function generateQuestions(timeSignature, difficulty, includePauses, count) {
         questions.push({
             notation: correct.notation,
             options: options,
-            correctIndex: correctIndex
+            correctAnswer: correctIndex
         });
     }
     
@@ -375,6 +398,20 @@ function showResults(players) {
 // Metronom + Rhythmus abspielen
 function playRhythmWithMetronome(pattern) {
     if (!audioContext) initAudio();
+    
+    if (!audioContext) {
+        console.error('Audio Context not available');
+        return;
+    }
+    
+    // Resume audio context if suspended (iOS Safari fix)
+    if (audioContext.state === 'suspended') {
+        audioContext.resume().then(() => {
+            console.log('Audio Context resumed');
+        }).catch(error => {
+            console.error('Failed to resume Audio Context:', error);
+        });
+    }
     
     const tempo = 120;
     const beatDuration = 60 / tempo;
