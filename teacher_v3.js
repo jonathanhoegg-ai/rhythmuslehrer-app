@@ -143,47 +143,73 @@ async function createGame() {
     document.getElementById('endGameBtn').style.display = 'inline-block';
     document.getElementById('playersList').style.display = 'block';
     
+    // Generate QR code
+    generateQRCode(currentGameCode);
+    
+    // Listen for players
+    database.ref('games/' + currentGameCode + '/players').on('value', (snapshot) => {
+        updatePlayersList(snapshot.val());
+    });
+}
+
+function generateQRCode(gameCode) {
     // ⚠️ WICHTIG: HIER DEINE GITHUB PAGES URL EINTRAGEN! ⚠️
     // Format: https://DEIN-USERNAME.github.io/DEIN-REPO/student.html?game=
-    const qrUrl = 'https://jonathanhoegg-ai.github.io/rhythmuslehrer-app/student.html?game=' + currentGameCode;
+    const qrUrl = 'https://jonathanhoegg-ai.github.io/rhythmuslehrer-app/student.html?game=' + gameCode;
     const qrContainer = document.getElementById('qrcode');
     qrContainer.innerHTML = ''; // Leeren
     
-    // QR-Code Canvas erstellen (mit verbesserter Fehlerbehandlung)
+    // Check if QRCode library is loaded
+    if (typeof QRCode === 'undefined') {
+        console.warn('QR-Code Library not loaded yet, retrying...');
+        qrContainer.innerHTML = '<p style="color: #667eea; font-weight: bold;">QR-Code wird generiert...</p>';
+        
+        // Wait for library to load with multiple retries
+        let retries = 0;
+        const maxRetries = 5;
+        const retryInterval = setInterval(() => {
+            retries++;
+            if (typeof QRCode !== 'undefined') {
+                clearInterval(retryInterval);
+                console.log('QR-Code Library loaded, generating QR code...');
+                generateQRCodeCanvas(qrUrl, qrContainer, gameCode);
+            } else if (retries >= maxRetries) {
+                clearInterval(retryInterval);
+                console.error('QR-Code Library failed to load after multiple retries');
+                qrContainer.innerHTML = `<p style="color: #E53935; font-weight: bold;">⚠️ QR-Code konnte nicht erstellt werden</p><p style="margin-top: 10px;">Verwenden Sie den manuellen Code:<br><strong style="font-size: 1.8em; color: #333;">${gameCode}</strong></p>`;
+            }
+        }, 500);
+        return;
+    }
+    
+    // Library is loaded, generate immediately
+    generateQRCodeCanvas(qrUrl, qrContainer, gameCode);
+}
+
+function generateQRCodeCanvas(qrUrl, qrContainer, gameCode) {
     try {
-        if (typeof QRCode === 'undefined') {
-            console.warn('QR-Code Library not loaded yet');
-            qrContainer.innerHTML = '<p style="color: #667eea; font-weight: bold;">QR-Code Library lädt noch... Bitte kurz warten!</p>';
-            // Retry after 1 second
-            setTimeout(() => {
-                if (typeof QRCode !== 'undefined') {
-                    createGame(); // Retry game creation
-                } else {
-                    qrContainer.innerHTML = `<p style="color: #E53935;">QR-Code Library konnte nicht geladen werden.<br>Verwenden Sie den manuellen Code: <strong>${currentGameCode}</strong></p>`;
-                }
-            }, 1000);
-            return;
-        }
         const canvas = document.createElement('canvas');
-        await QRCode.toCanvas(canvas, qrUrl, {
+        QRCode.toCanvas(canvas, qrUrl, {
             width: 250,
             margin: 2,
             color: {
                 dark: '#667eea',
                 light: '#ffffff'
             }
+        }, (error) => {
+            if (error) {
+                console.error('QR-Code generation error:', error);
+                qrContainer.innerHTML = `<p style="color: #E53935; font-weight: bold;">⚠️ QR-Code konnte nicht erstellt werden</p><p style="margin-top: 10px;">Verwenden Sie den manuellen Code:<br><strong style="font-size: 1.8em; color: #333;">${gameCode}</strong></p>`;
+            } else {
+                qrContainer.innerHTML = '';
+                qrContainer.appendChild(canvas);
+                console.log('✅ QR-Code successfully generated');
+            }
         });
-        qrContainer.appendChild(canvas);
-        console.log('QR-Code successfully generated');
     } catch (error) {
-        console.error('QR-Code Fehler:', error);
-        qrContainer.innerHTML = `<p style="color: #E53935; font-weight: bold;">QR-Code konnte nicht erstellt werden.</p><p>Verwenden Sie den manuellen Code: <strong style="font-size: 1.5em;">${currentGameCode}</strong></p>`;
+        console.error('QR-Code canvas creation error:', error);
+        qrContainer.innerHTML = `<p style="color: #E53935; font-weight: bold;">⚠️ QR-Code konnte nicht erstellt werden</p><p style="margin-top: 10px;">Verwenden Sie den manuellen Code:<br><strong style="font-size: 1.8em; color: #333;">${gameCode}</strong></p>`;
     }
-    
-    // Listen for players
-    database.ref('games/' + currentGameCode + '/players').on('value', (snapshot) => {
-        updatePlayersList(snapshot.val());
-    });
 }
 
 function generateQuestions(timeSignature, difficulty, includePauses, count) {
@@ -542,4 +568,11 @@ function playNote(startTime, duration, instrument) {
 window.addEventListener('load', async () => {
     await loadRhythmsDatabase();
     displayAllRhythms();
+    
+    // Check if QRCode library is loaded
+    if (typeof QRCode !== 'undefined') {
+        console.log('✅ QRCode library loaded successfully');
+    } else {
+        console.warn('⚠️ QRCode library not loaded - QR codes may not work');
+    }
 });
