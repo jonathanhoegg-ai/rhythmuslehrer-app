@@ -1,5 +1,86 @@
 # Changelog - Rhythmuslehrer App
 
+## Version 0.4.1 (2025-11-02) - HOTFIX
+
+### 🔴 CRITICAL FIXES
+
+#### 1. ✅ **Student Answer Feedback NOW WORKS**
+- Visual feedback (✅/❌ checkmarks) appears immediately
+- Green/red borders with glow effect on selected answer
+- Students can SEE instantly if their answer was correct
+- Fixed async handling in answer submission
+
+#### 2. ✅ **Scoring System FIXED**
+- Points are now correctly awarded for correct answers
+- Real-time score updates in Firebase
+- Player scores visible in teacher view
+- correctAnswers counter works properly
+
+#### 3. ✅ **Motivational Feedback After Each Question**
+- Intermediate screen shows AFTER EVERY answer
+- Performance-based motivation messages (4 categories)
+- Shows current percentage and remaining questions
+- Students don't wait for next question to see feedback
+
+#### 4. ⚡ **Speed-Based Scoring (NEW FEATURE)**
+- Base: 100 points for correct answer
+- Speed Bonus: Up to +50 points for fast answers (< 10 seconds)
+- Timer starts when question appears
+- Faster correct answer = more bonus points
+- Encourages quick thinking and rhythm recognition
+
+#### 5. 🔊 **PAUSE SOUNDS DRAMATICALLY IMPROVED**
+- **ALL pauses in database converted: `0` → negative values (`-1`, `-2`)**
+- Pause noise amplitude: **0.15** (was 0.08) - almost 2x louder
+- Pause noise gain: **0.25** (was 0.15) - significantly more audible
+- Pauses are NOW CLEARLY AUDIBLE with distinct white noise
+- Console logs show exactly when each pause plays
+- Duration-aware: Quarter rest = 1 beat, Half rest = 2 beats
+
+#### 6. 🎵 **Audio Pattern Playback FIXED**
+- Question structure now includes `pattern` data
+- Pattern data correctly used for audio playback
+- Rhythms now match written notation exactly
+- Fixed duration handling in playBeat function
+- Separate sounds for notes vs pauses
+
+#### 7. 🗄️ **Rhythms Database Structure CORRECTED**
+- **ALL 45+ "withPauses" patterns fixed**:
+  - Beginner: 15 rhythms converted
+  - Intermediate: 15 rhythms converted
+  - Advanced: 15+ rhythms converted
+- Proper pause duration encoding:
+  - Viertel-Pause: `0` → `-1`
+  - Halbe-Pause: `0` → `-2`
+  - Pattern integrity maintained
+  - Database validated with Python script
+
+### 🐛 Bug Fixes
+- Fixed question structure lacking pattern data
+- Fixed playBeat receiving wrong parameter type
+- Fixed intermediate screen not showing
+- Fixed speed bonus not being calculated
+- Fixed player key lookup in Firebase
+
+### 📊 Technical Details
+```
+Pause Audio Settings:
+- Amplitude: 0.15 (previously 0.08)
+- Gain: 0.25 (previously 0.15)
+- Duration: Based on beat value (1 or 2 beats)
+
+Speed Bonus Formula:
+- MAX_TIME_FOR_BONUS: 10000ms (10 seconds)
+- BASE_POINTS: 100
+- SPEED_BONUS_MAX: 50
+- speedBonus = SPEED_BONUS_MAX * (1 - timeElapsed / MAX_TIME_FOR_BONUS)
+```
+
+### ⚠️ Breaking Changes
+None - fully backward compatible
+
+---
+
 ## Version 0.4 (2025-11-02)
 
 ### 🎯 Große Verbesserungen
