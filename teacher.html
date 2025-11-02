@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rhythmuslehrer - Lehrer</title>
+    <title>Rhythmuslehrer v0.4 - Lehrer</title>
     <style>
         * {
             margin: 0;
@@ -136,20 +136,26 @@
         
         .notation {
             background: white;
-            padding: 60px 20px;
+            padding: 40px 20px;
             margin: 30px 0;
             border-radius: 20px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.1);
             text-align: center;
-            font-size: 6em;
+            font-size: 4em;
             font-family: 'Segoe UI Symbol', 'Apple Color Emoji', 'Noto Music', serif;
-            line-height: 1.2;
-            min-height: 200px;
+            line-height: 1.5;
+            min-height: 150px;
             display: flex;
             align-items: center;
             justify-content: center;
             word-wrap: break-word;
             overflow-wrap: break-word;
+            letter-spacing: 0.1em;
+        }
+        
+        .notation * {
+            font-size: 1em !important;
+            line-height: 1.5 !important;
         }
         
         .answer-grid {
@@ -313,9 +319,16 @@
         }
         
         .rhythm-item .notation {
-            font-size: 2em;
+            font-size: 2.5em;
             padding: 20px;
-            min-height: 80px;
+            min-height: 100px;
+            line-height: 1.5;
+            letter-spacing: 0.1em;
+        }
+        
+        .rhythm-item .notation * {
+            font-size: 1em !important;
+            line-height: 1.5 !important;
         }
         
         textarea, input[type="text"] {
@@ -432,7 +445,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎵 Rhythmuslehrer - Lehreransicht 👨‍🏫</h1>
+        <h1>🎵 Rhythmuslehrer v0.4 - Lehreransicht 👨‍🏫</h1>
         
         <div class="tab-buttons">
             <button class="tab-btn active" onclick="switchTab('game')">🎮 Spiel</button>

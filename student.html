@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rhythmuslehrer - Schüler</title>
+    <title>Rhythmuslehrer v0.4 - Schüler</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -106,13 +106,19 @@
             text-align: center;
             font-size: 3em;
             font-family: 'Segoe UI Symbol', 'Apple Color Emoji', serif;
-            line-height: 1.2;
+            line-height: 1.5;
             min-height: 120px;
             display: flex;
             align-items: center;
             justify-content: center;
             word-wrap: break-word;
             overflow: hidden;
+            letter-spacing: 0.1em;
+        }
+        
+        .notation * {
+            font-size: 1em !important;
+            line-height: 1.5 !important;
         }
         .answer-grid {
             display: grid;
@@ -189,7 +195,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎵 Rhythmus-Trainer 🎵</h1>
+        <h1>🎵 Rhythmus-Trainer v0.4 🎵</h1>
         
         <!-- Join Screen -->
         <div id="join-screen" class="screen active">

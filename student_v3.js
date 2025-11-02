@@ -50,19 +50,37 @@ const questionScreen = document.getElementById('question-screen');
 const intermediateScreen = document.getElementById('intermediate-screen');
 const resultsScreen = document.getElementById('results-screen');
 
-// Motivational Phrases
-const MOTIVATIONAL_PHRASES = [
-    "Stark! Weiter so! 💪",
-    "Du rockst das! 🎸",
-    "Mega Fortschritt! 🔥",
-    "Fast geschafft! 🎯",
-    "Dran bleiben, läuft! ✨",
-    "Top Performance! 🌟",
-    "Rhythmus-King/Queen! 👑",
-    "Noch ein paar Steps! 🚀",
-    "Richtig smooth! 🎵",
-    "Keep going! 💯"
-];
+// Motivational Phrases - erweitert und nach Leistung kategorisiert
+const MOTIVATIONAL_PHRASES = {
+    excellent: [
+        "🔥 Unglaublich! Du bist ein Rhythmus-Genie!",
+        "👑 Perfekt! Du rockst das komplett!",
+        "⭐ Mega! Fast alle richtig - Wahnsinn!",
+        "🎯 Fantastisch! Du bist on fire!",
+        "💎 Outstanding! Rhythmus-Champion!"
+    ],
+    good: [
+        "💪 Stark! Weiter so, das läuft super!",
+        "🎸 Cool! Du machst das richtig gut!",
+        "✨ Gut gemacht! Dran bleiben!",
+        "🌟 Nice! Schon über die Hälfte richtig!",
+        "🚀 Top! Du bist auf dem richtigen Weg!"
+    ],
+    medium: [
+        "💡 Nicht schlecht! Noch ein bisschen üben!",
+        "🎵 Okay! Du kommst da hin!",
+        "📈 Geht voran! Bleib fokussiert!",
+        "🎯 Solide! Weiter konzentrieren!",
+        "⚡ Geht schon! Noch ein paar mehr!"
+    ],
+    needsWork: [
+        "💪 Keine Sorge! Übung macht den Meister!",
+        "🎓 Gut versucht! Beim nächsten Mal besser!",
+        "🌱 Das wird! Weiter probieren!",
+        "🔄 Learning by doing! Nicht aufgeben!",
+        "💫 Jeder fängt mal an! Du schaffst das!"
+    ]
+};
 
 // ===========================
 // INITIALIZATION
@@ -316,11 +334,12 @@ async function showCurrentQuestion() {
     }
 }
 
-function selectAnswer(answerIndex) {
+async function selectAnswer(answerIndex) {
+    const selectedAnswer = parseInt(answerIndex);
     // Save answer
-    playerAnswers[currentQuestionIndex] = parseInt(answerIndex);
+    playerAnswers[currentQuestionIndex] = selectedAnswer;
 
-    // Visual feedback
+    // Visual feedback - mark selected
     document.querySelectorAll('.answer-btn').forEach(btn => {
         btn.classList.remove('selected');
     });
@@ -331,8 +350,20 @@ function selectAnswer(answerIndex) {
         btn.disabled = true;
     });
 
-    // Submit answer to Firebase
-    submitAnswer(parseInt(answerIndex));
+    // Submit answer to Firebase and get result
+    const isCorrect = await submitAnswer(selectedAnswer);
+    
+    // Show immediate visual feedback
+    const selectedBtn = event.target;
+    if (isCorrect) {
+        selectedBtn.style.border = '5px solid #4CAF50';
+        selectedBtn.style.boxShadow = '0 0 30px rgba(76, 175, 80, 0.8)';
+        selectedBtn.innerHTML += ' ✅';
+    } else {
+        selectedBtn.style.border = '5px solid #f44336';
+        selectedBtn.style.boxShadow = '0 0 30px rgba(244, 67, 54, 0.8)';
+        selectedBtn.innerHTML += ' ❌';
+    }
 
     // Wait for teacher to proceed or auto-advance after delay
     setTimeout(() => {
@@ -354,9 +385,33 @@ async function submitAnswer(answerIndex) {
             correct: isCorrect,
             timestamp: Date.now()
         });
+        
+        // Update player score in Firebase
+        const playersSnapshot = await gameRef.child('players').once('value');
+        const players = playersSnapshot.val();
+        let playerKey = null;
+        
+        // Find player's key
+        for (let key in players) {
+            if (players[key].name === playerName) {
+                playerKey = key;
+                break;
+            }
+        }
+        
+        if (playerKey && isCorrect) {
+            const currentScore = players[playerKey].score || 0;
+            await gameRef.child('players/' + playerKey).update({
+                score: currentScore + 100,
+                correctAnswers: (players[playerKey].correctAnswers || 0) + 1
+            });
+        }
+        
+        return isCorrect;
 
     } catch (error) {
         console.error('Error submitting answer:', error);
+        return false;
     }
 }
 
@@ -413,24 +468,37 @@ async function showIntermediateScreen() {
 
         // Generate motivational message
         const motivationalText = generateMotivationalText(percentCorrect, remainingQuestions);
-        document.getElementById('motivational-text').textContent = motivationalText;
+        document.getElementById('motivational-text').innerHTML = motivationalText;
     } catch (error) {
         console.error('Error showing intermediate screen:', error);
     }
 }
 
 function generateMotivationalText(percentCorrect, remainingQuestions) {
-    const randomPhrase = MOTIVATIONAL_PHRASES[Math.floor(Math.random() * MOTIVATIONAL_PHRASES.length)];
-    
-    let message = `${percentCorrect}% richtig! `;
-    
-    if (remainingQuestions > 0) {
-        message += `Noch ${remainingQuestions} ${remainingQuestions === 1 ? 'Übung' : 'Übungen'}. `;
+    // Wähle Kategorie basierend auf Performance
+    let category;
+    if (percentCorrect >= 80) {
+        category = 'excellent';
+    } else if (percentCorrect >= 60) {
+        category = 'good';
+    } else if (percentCorrect >= 40) {
+        category = 'medium';
     } else {
-        message += 'Letzte Frage geschafft! ';
+        category = 'needsWork';
     }
     
-    message += randomPhrase;
+    const phrases = MOTIVATIONAL_PHRASES[category];
+    const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+    
+    let message = `<strong style="font-size: 1.5em; color: #667eea;">${percentCorrect}% richtig!</strong><br><br>`;
+    
+    if (remainingQuestions > 0) {
+        message += `Noch ${remainingQuestions} ${remainingQuestions === 1 ? 'Frage' : 'Fragen'} übrig.<br><br>`;
+    } else {
+        message += 'Letzte Frage geschafft!<br><br>';
+    }
+    
+    message += `<span style="font-size: 1.3em;">${randomPhrase}</span>`;
     
     return message;
 }
@@ -552,8 +620,10 @@ async function playRhythmWithMetronome(question) {
     // Play the actual rhythm
     if (question.beats) {
         question.beats.forEach((beat, index) => {
-            if (beat === 'rest' || beat === 'pause') {
-                playPauseNoise(currentTime);
+            if (beat === 'rest' || beat === 'pause' || beat === 0 || beat < 0) {
+                // WICHTIG: Für ALLE Pausen weißes Rauschen spielen
+                console.log(`Playing pause noise at beat ${index}`);
+                playPauseNoise(currentTime, beatDuration);
             } else {
                 playBeat(beat, currentTime, question.instrument || 'Holzblock');
             }
@@ -579,14 +649,20 @@ function playMetronomeClick(time, emphasized = false) {
     oscillator.stop(time + 0.05);
 }
 
-function playPauseNoise(time) {
-    const bufferSize = audioContext.sampleRate * NOISE_DURATION;
+function playPauseNoise(time, duration) {
+    const actualDuration = duration || NOISE_DURATION;
+    if (actualDuration < 0.01) {
+        console.warn('Pause duration too short, skipped');
+        return;
+    }
+    
+    const bufferSize = Math.floor(audioContext.sampleRate * actualDuration);
     const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
     const data = buffer.getChannelData(0);
 
-    // Generate very quiet white noise
+    // Weißes Rauschen generieren - WICHTIG: Gut hörbar aber nicht zu laut
     for (let i = 0; i < bufferSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * 0.05; // Very low volume
+        data[i] = (Math.random() * 2 - 1) * 0.08; // Erhöht von 0.05 auf 0.08
     }
 
     const noise = audioContext.createBufferSource();
@@ -596,9 +672,11 @@ function playPauseNoise(time) {
     noise.connect(gainNode);
     gainNode.connect(audioContext.destination);
 
-    gainNode.gain.value = 0.1; // Quiet
+    // Lautstärke erhöht von 0.1 auf 0.15 für bessere Hörbarkeit
+    gainNode.gain.value = 0.15;
 
     noise.start(time);
+    console.log(`✓ Pause noise played: ${actualDuration.toFixed(2)}s at gain 0.15`);
 }
 
 function playBeat(beatType, time, instrumentName) {

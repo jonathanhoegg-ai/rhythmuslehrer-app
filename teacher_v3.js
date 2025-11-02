@@ -256,7 +256,7 @@ function updatePlayersList(players) {
     const count = document.getElementById('playerCount');
     
     if (!players) {
-        container.innerHTML = '<p>Noch keine Teilnehmer...</p>';
+        container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">Noch keine Teilnehmer...<br>Warten auf Spieler 🕐</p>';
         count.textContent = '0';
         return;
     }
@@ -264,12 +264,35 @@ function updatePlayersList(players) {
     const playerArray = Object.values(players).sort((a, b) => (b.score || 0) - (a.score || 0));
     count.textContent = playerArray.length;
     
-    container.innerHTML = playerArray.map((player, index) => `
-        <div class="player-item">
-            <span>${index + 1}. 👤 ${player.name}</span>
-            <span class="score">${player.score || 0} Punkte</span>
+    // Kahoot-style player list with colorful avatars
+    const colors = ['#E53935', '#1E88E5', '#FB8C00', '#43A047', '#9C27B0', '#00ACC1', '#FDD835', '#F06292'];
+    
+    container.innerHTML = playerArray.map((player, index) => {
+        const color = colors[index % colors.length];
+        const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+        const answered = player.correctAnswers || 0;
+        
+        return `
+        <div class="player-item" style="animation: slideIn 0.3s ease-out; animation-delay: ${index * 0.05}s; opacity: 0; animation-fill-mode: forwards;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="width: 50px; height: 50px; border-radius: 50%; background: ${color}; display: flex; align-items: center; justify-content: center; font-size: 1.5em; font-weight: bold; color: white; box-shadow: 0 3px 10px rgba(0,0,0,0.2);">
+                    ${player.name.charAt(0).toUpperCase()}
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-size: 1.2em; font-weight: bold; color: #333;">
+                        ${medal} ${player.name}
+                    </div>
+                    <div style="font-size: 0.9em; color: #666;">
+                        ✓ ${answered} richtig
+                    </div>
+                </div>
+            </div>
+            <span class="score" style="font-size: 1.5em; font-weight: bold; color: ${color};">
+                ${player.score || 0}
+            </span>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 async function updateLiveInstrument() {
@@ -379,13 +402,71 @@ async function nextQuestion() {
 
 async function endGame() {
     await database.ref('games/' + currentGameCode).update({
-        status: 'finished'
+        status: 'finished',
+        endedAt: Date.now()
     });
     
-    const snapshot = await database.ref('games/' + currentGameCode + '/players').once('value');
-    const players = snapshot.val();
+    const snapshot = await database.ref('games/' + currentGameCode).once('value');
+    const gameData = snapshot.val();
+    const players = gameData.players;
+    
+    // Speichere Spiel-Ergebnisse in separater "results" Collection
+    await saveGameResults(gameData);
     
     showResults(players);
+}
+
+async function saveGameResults(gameData) {
+    try {
+        const resultData = {
+            gameCode: currentGameCode,
+            createdAt: gameData.createdAt,
+            endedAt: gameData.endedAt,
+            settings: {
+                timeSignature: gameData.timeSignature,
+                difficulty: gameData.difficulty,
+                includePauses: gameData.includePauses,
+                totalQuestions: gameData.questions ? Object.keys(gameData.questions).length : 0
+            },
+            players: {},
+            summary: {}
+        };
+        
+        // Player-Ergebnisse sammeln
+        if (gameData.players) {
+            const playerArray = Object.entries(gameData.players).map(([id, data]) => ({
+                id,
+                name: data.name,
+                score: data.score || 0,
+                correctAnswers: data.correctAnswers || 0,
+                joinedAt: data.joinedAt
+            }));
+            
+            playerArray.forEach(player => {
+                resultData.players[player.id] = {
+                    name: player.name,
+                    score: player.score,
+                    correctAnswers: player.correctAnswers,
+                    percentage: Math.round((player.correctAnswers / resultData.settings.totalQuestions) * 100)
+                };
+            });
+            
+            // Summary Stats
+            resultData.summary = {
+                totalPlayers: playerArray.length,
+                averageScore: Math.round(playerArray.reduce((sum, p) => sum + p.score, 0) / playerArray.length),
+                highestScore: Math.max(...playerArray.map(p => p.score)),
+                lowestScore: Math.min(...playerArray.map(p => p.score))
+            };
+        }
+        
+        // Speichere in Firebase unter "gameResults"
+        await database.ref('gameResults/' + currentGameCode).set(resultData);
+        console.log('✅ Spiel-Ergebnisse gespeichert:', currentGameCode);
+        
+    } catch (error) {
+        console.error('Fehler beim Speichern der Ergebnisse:', error);
+    }
 }
 
 function showResults(players) {
@@ -451,14 +532,17 @@ function playRhythmWithMetronome(pattern) {
     // Rhythmus nach Vorzählen
     currentTime += 4 * beatDuration;
     
-    pattern.forEach(duration => {
+    pattern.forEach((duration, index) => {
+        const absDuration = Math.abs(duration);
         if (duration > 0) {
-            playNote(currentTime, duration * beatDuration, currentInstrument);
-        } else if (duration < 0) {
-            // Leises Rauschen bei Pausen (nur wenn duration negativ)
-            playPauseNoise(currentTime, Math.abs(duration) * beatDuration);
+            // Normale Note spielen
+            playNote(currentTime, absDuration * beatDuration, currentInstrument);
+        } else {
+            // WICHTIG: Für ALLE Pausen (duration <= 0) weißes Rauschen spielen
+            console.log(`Playing pause noise at beat ${index}, duration: ${absDuration}`);
+            playPauseNoise(currentTime, absDuration * beatDuration);
         }
-        currentTime += Math.abs(duration) * beatDuration;
+        currentTime += absDuration * beatDuration;
     });
 }
 
@@ -481,13 +565,18 @@ function playMetronomeClick(startTime, isFirst) {
 
 function playPauseNoise(startTime, duration) {
     const actualDuration = Math.abs(duration);
-    if (actualDuration < 0.01) return; // Skip sehr kurze Pausen
+    if (actualDuration < 0.01) {
+        console.warn('Pause duration too short, skipped');
+        return;
+    }
+    
     const bufferSize = Math.max(1, Math.floor(audioContext.sampleRate * actualDuration));
     const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
     const data = buffer.getChannelData(0);
     
+    // Weißes Rauschen generieren - WICHTIG: Gut hörbar aber nicht zu laut
     for (let i = 0; i < bufferSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * 0.02; // Sehr leise
+        data[i] = (Math.random() * 2 - 1) * 0.08; // Erhöht von 0.02 auf 0.08
     }
     
     const source = audioContext.createBufferSource();
@@ -496,9 +585,12 @@ function playPauseNoise(startTime, duration) {
     source.buffer = buffer;
     source.connect(gainNode);
     gainNode.connect(audioContext.destination);
-    gainNode.gain.value = 0.05;
+    
+    // Lautstärke erhöht von 0.05 auf 0.15 für bessere Hörbarkeit
+    gainNode.gain.value = 0.15;
     
     source.start(startTime);
+    console.log(`✓ Pause noise played: ${actualDuration.toFixed(2)}s at gain 0.15`);
 }
 
 function playNote(startTime, duration, instrument) {
